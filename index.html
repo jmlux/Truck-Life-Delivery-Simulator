@@ -1058,6 +1058,10 @@ function drawPlayer() {
 
 function drawWorld() {
 
+    /* =========================
+       THIRD PERSON CAMERA
+       ========================= */
+
     const focusX =
         player.insideTruck
         ? truck.x
@@ -1069,25 +1073,44 @@ function drawWorld() {
         : player.y;
 
 
-    const cameraX =
-        Math.max(
-            0,
-            Math.min(
-                world.width - W,
-                focusX - W/2
-            )
-        );
+    /* Camera offset */
+    const cameraOffsetY =
+        player.insideTruck
+        ? 0
+        : -90;
 
 
-    const cameraY =
-        Math.max(
-            0,
-            Math.min(
-                world.height - H,
-                focusY - H/2
-            )
-        );
+    let cameraX =
+        focusX - W / 2;
 
+
+    let cameraY =
+        focusY - H / 2 - cameraOffsetY;
+
+
+    /* Keep camera inside world */
+
+    cameraX = Math.max(
+        0,
+        Math.min(
+            world.width - W,
+            cameraX
+        )
+    );
+
+
+    cameraY = Math.max(
+        0,
+        Math.min(
+            world.height - H,
+            cameraY
+        )
+    );
+
+
+    /* =========================
+       BACKGROUND
+       ========================= */
 
     ctx.fillStyle = "#68a653";
 
@@ -1101,13 +1124,20 @@ function drawWorld() {
 
     ctx.save();
 
+
+    /* =========================
+       CAMERA
+       ========================= */
+
     ctx.translate(
         -cameraX,
         -cameraY
     );
 
 
-    /* roads */
+    /* =========================
+       ROADS
+       ========================= */
 
     ctx.fillStyle = "#454b50";
 
@@ -1118,6 +1148,7 @@ function drawWorld() {
         230
     );
 
+
     ctx.fillRect(
         1050,
         0,
@@ -1126,11 +1157,18 @@ function drawWorld() {
     );
 
 
-    /* road lines */
+    /* =========================
+       ROAD LINES
+       ========================= */
 
     ctx.fillStyle = "#e3d46c";
 
-    for(let x=0;x<world.width;x+=100) {
+
+    for(
+        let x = 0;
+        x < world.width;
+        x += 100
+    ) {
 
         ctx.fillRect(
             x,
@@ -1141,7 +1179,11 @@ function drawWorld() {
     }
 
 
-    for(let y=0;y<world.height;y+=100) {
+    for(
+        let y = 0;
+        y < world.height;
+        y += 100
+    ) {
 
         ctx.fillRect(
             1135,
@@ -1152,32 +1194,39 @@ function drawWorld() {
     }
 
 
-    /* buildings */
+    /* =========================
+       BUILDINGS
+       ========================= */
 
     drawLocation(
         locations.office,
         "#59636c"
     );
 
+
     drawLocation(
         locations.warehouse,
         "#7a6651"
     );
+
 
     drawLocation(
         locations.gas,
         "#bd7c32"
     );
 
+
     drawLocation(
         locations.diner,
         "#9a5863"
     );
 
+
     drawLocation(
         locations.rest,
         "#526f58"
     );
+
 
     drawLocation(
         locations.depot,
@@ -1185,7 +1234,9 @@ function drawWorld() {
     );
 
 
-    /* contract marker */
+    /* =========================
+       CONTRACT MARKER
+       ========================= */
 
     if(contract) {
 
@@ -1199,28 +1250,43 @@ function drawWorld() {
 
         ctx.lineWidth = 6;
 
+
         ctx.beginPath();
 
         ctx.arc(
-            target.x + target.width/2,
-            target.y + target.height/2,
+            target.x + target.width / 2,
+            target.y + target.height / 2,
             70,
             0,
-            Math.PI*2
+            Math.PI * 2
         );
 
         ctx.stroke();
     }
 
 
+    /* =========================
+       TRUCK
+       ========================= */
+
     drawTruck();
 
-    drawPlayer();
+
+    /* =========================
+       PLAYER
+       ========================= */
+
+    if(!player.insideTruck) {
+
+        drawPlayer();
+
+    }
 
 
     ctx.restore();
-}
-
+    }
+    
+    
 
 /* =========================
    HUD
