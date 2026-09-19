@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truck Life - Delivery Simulator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #20252b;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: #68a653;
+}
+
+#hud {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: rgba(0,0,0,.75);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+#contract {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 230px;
+    background: rgba(0,0,0,.8);
+    padding: 12px;
+    border-radius: 12px;
+    z-index: 10;
+    font-size: 13px;
+}
+
+#message {
+    position: fixed;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,.9);
+    padding: 15px 22px;
+    border-radius: 12px;
+    display: none;
+    z-index: 20;
+    text-align: center;
+}
+
+.controls {
+    position: fixed;
+    bottom: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 15;
+}
+
+button {
+    width: 60px;
+    height: 60px;
+    margin: 4px;
+    border: 1px solid #777;
+    border-radius: 15px;
+    background: rgba(0,0,0,.75);
+    color: white;
+    font-size: 18px;
+}
+
+button:active {
+    transform: scale(.92);
+    background: #34434c;
+}
+
+.rightButtons {
+    display: flex;
+    align-items: end;
+}
+
+.small {
+    width: 55px;
+    height: 55px;
+    font-size: 12px;
+}
+
+#interact {
+    width: 85px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+    💰 Money: $<span id="money">2500</span><br>
+    ⛽ Fuel: <span id="fuel">100</span>%<br>
+    🍔 Hunger: <span id="hunger">100</span>%<br>
+    💧 Thirst: <span id="thirst">100</span>%<br>
+    ⚡ Energy: <span id="energy">100</span>%<br>
+    📅 Day: <span id="day">1</span>
+</div>
+
+<div id="contract">
+    <b>📦 CONTRACT</b>
+    <hr>
+    <div id="contractText">
+        No active contract.
+    </div>
+</div>
+
+<div id="message"></div>
+
+<div class="controls">
+
+    <div>
+        <button id="left">◀</button>
+        <button id="right">▶</button>
+    </div>
+
+    <div>
+        <button id="gas">▲</button>
+        <button id="brake">▼</button>
+    </div>
+
+    <div class="rightButtons">
+        <button class="small" onclick="enterExit()">🚪</button>
+        <button class="small" onclick="interact()">✋</button>
+        <button class="small" onclick="eat()">🍔</button>
+        <button class="small" onclick="sleep()">🛏️</button>
+    </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W = innerWidth;
+let H = innerHeight;
+
+function resize() {
+    W = innerWidth;
+    H = innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+}
+
+resize();
+window.addEventListener("resize", resize);
+
+
+/* =========================
+   PLAYER
+========================= */
+
+let player = {
+    x: 1100,
+    y: 800,
+    angle: 0,
+    walking: false,
+    insideTruck: true,
+    animation: 0
+};
+
+
+/* =========================
+   TRUCK
+========================= */
+
+let truck = {
+    x: 1100,
+    y: 800,
+    angle: 0,
+    speed: 0,
+    fuel: 100,
+    condition: 100
+};
+
+
+/* =========================
+   LIFE
+========================= */
+
+let money = 2500;
+let hunger = 100;
+let thirst = 100;
+let energy = 100;
+let day = 1;
+
+
+/* =========================
+   CONTRACT
+========================= */
+
+let contract = null;
+
+
+/* =========================
+   WORLD
+========================= */
+
+const world = {
+    width: 2400,
+    height: 1600
+};
+
+const locations = {
+
+    office: {
+        x: 200,
+        y: 200,
+        width: 350,
+        height: 220,
+        name: "CONTRACT OFFICE"
+    },
+
+    warehouse: {
+        x: 1850,
+        y: 180,
+        width: 350,
+        height: 250,
+        name: "WAREHOUSE"
+    },
+
+    gas: {
+        x: 950,
+        y: 200,
+        width: 280,
+        height: 180,
+        name: "GAS STATION"
+    },
+
+    diner: {
+        x: 1350,
+        y: 1100,
+        width: 300,
+        height: 190,
+        name: "DINER"
+    },
+
+    rest: {
+        x: 450,
+        y: 1150,
+        width: 330,
+        height: 200,
+        name: "REST AREA"
+    },
+
+    depot: {
+        x: 1850,
+        y: 1100,
+        width: 350,
+        height: 240,
+        name: "CITY DEPOT"
+    }
+};
+
+
+/* =========================
+   INPUT
+========================= */
+
+let keys = {
+    left:false,
+    right:false,
+    gas:false,
+    brake:false
+};
+
+function hold(button, key) {
+
+    button.addEventListener("pointerdown", () => {
+        keys[key] = true;
+    });
+
+    button.addEventListener("pointerup", () => {
+        keys[key] = false;
+    });
+
+    button.addEventListener("pointerleave", () => {
+        keys[key] = false;
+    });
+}
+
+hold(document.getElementById("left"), "left");
+hold(document.getElementById("right"), "right");
+hold(document.getElementById("gas"), "gas");
+hold(document.getElementById("brake"), "brake");
+
+
+/* KEYBOARD */
+
+window.addEventListener("keydown", e => {
+
+    if(e.key === "ArrowLeft" || e.key === "a")
+        keys.left = true;
+
+    if(e.key === "ArrowRight" || e.key === "d")
+        keys.right = true;
+
+    if(e.key === "ArrowUp" || e.key === "w")
+        keys.gas = true;
+
+    if(e.key === "ArrowDown" || e.key === "s")
+        keys.brake = true;
+
+    if(e.key === "e")
+        interact();
+
+    if(e.key === "f")
+        enterExit();
+});
+
+window.addEventListener("keyup", e => {
+
+    if(e.key === "ArrowLeft" || e.key === "a")
+        keys.left = false;
+
+    if(e.key === "ArrowRight" || e.key === "d")
+        keys.right = false;
+
+    if(e.key === "ArrowUp" || e.key === "w")
+        keys.gas = false;
+
+    if(e.key === "ArrowDown" || e.key === "s")
+        keys.brake = false;
+});
+
+
+/* =========================
+   MESSAGE
+========================= */
+
+function message(text) {
+
+    const box = document.getElementById("message");
+
+    box.innerText = text;
+    box.style.display = "block";
+
+    clearTimeout(window.msgTimer);
+
+    window.msgTimer = setTimeout(() => {
+        box.style.display = "none";
+    }, 2200);
+}
+
+
+/* =========================
+   CONTRACT
+========================= */
+
+function createContract() {
+
+    if(contract) {
+        message("Finish your current contract first.");
+        return;
+    }
+
+    contract = {
+        cargo: "Food Supplies",
+        reward: 1800,
+        loaded: false,
+        from: "warehouse",
+        to: "depot"
+    };
+
+    updateContract();
+
+    message("New contract accepted!");
+}
+
+function updateContract() {
+
+    const box = document.getElementById("contractText");
+
+    if(!contract) {
+
+        box.innerHTML = "No active contract.<br><br>Go to the Contract Office.";
+
+        return;
+    }
+
+    box.innerHTML =
+        "Cargo: <b>" + contract.cargo + "</b><br>" +
+        "Reward: <b>$" + contract.reward + "</b><br><br>" +
+        (contract.loaded
+            ? "Deliver to: CITY DEPOT"
+            : "Pickup: WAREHOUSE");
+}
+
+
+/* =========================
+   ENTER / EXIT
+========================= */
+
+function enterExit() {
+
+    if(player.insideTruck) {
+
+        player.insideTruck = false;
+
+        player.x = truck.x + 55;
+        player.y = truck.y;
+
+        player.angle = truck.angle;
+
+        truck.speed = 0;
+
+        message("You left the truck.");
+
+    } else {
+
+        const distance = Math.hypot(
+            player.x - truck.x,
+            player.y - truck.y
+        );
+
+        if(distance < 100) {
+
+            player.insideTruck = true;
+
+            player.x = truck.x;
+            player.y = truck.y;
+
+            message("You entered the truck.");
+
+        } else {
+
+            message("Move closer to the truck.");
+
+        }
+    }
+}
+
+
+/* =========================
+   INTERACTION
+========================= */
+
+function interact() {
+
+    if(player.insideTruck) {
+
+        message("Exit the truck first.");
+
+        return;
+    }
+
+
+    /* OFFICE */
+
+    if(distanceToLocation(locations.office) < 230) {
+
+        createContract();
+
+        return;
+    }
+
+
+    /* WAREHOUSE */
+
+    if(contract &&
+       !contract.loaded &&
+       distanceToLocation(locations.warehouse) < 230) {
+
+        contract.loaded = true;
+
+        message("📦 Cargo loaded! Deliver it to City Depot.");
+
+        updateContract();
+
+        return;
+    }
+
+
+    /* DEPOT */
+
+    if(contract &&
+       contract.loaded &&
+       distanceToLocation(locations.depot) < 230) {
+
+        money += contract.reward;
+
+        message(
+            "🚚 Delivery complete! +$" +
+            contract.reward
+        );
+
+        contract = null;
+
+        updateContract();
+
+        return;
+    }
+
+
+    /* GAS */
+
+    if(distanceToLocation(locations.gas) < 210) {
+
+        refuel();
+
+        return;
+    }
+
+
+    message("Nothing to interact with here.");
+}
+
+
+/* =========================
+   DISTANCE
+========================= */
+
+function distanceToLocation(location) {
+
+    const cx = location.x + location.width / 2;
+    const cy = location.y + location.height / 2;
+
+    return Math.hypot(
+        player.x - cx,
+        player.y - cy
+    );
+}
+
+
+/* =========================
+   REFUEL
+========================= */
+
+function refuel() {
+
+    if(player.insideTruck) {
+
+        message("Get out of the truck to refuel.");
+
+        return;
+    }
+
+    if(distanceToLocation(locations.gas) > 220) {
+
+        message("Go to the gas station.");
+
+        return;
+    }
+
+    const amount = 100 - truck.fuel;
+    const price = Math.ceil(amount * 1);
+
+    if(money < price) {
+
+        message("Not enough money.");
+
+        return;
+    }
+
+    money -= price;
+    truck.fuel = 100;
+
+    message("⛽ Truck refueled! -$" + price);
+}
+
+
+/* =========================
+   EAT
+========================= */
+
+function eat() {
+
+    if(player.insideTruck) {
+
+        message("You need to leave the truck.");
+
+        return;
+    }
+
+    if(distanceToLocation(locations.diner) > 220) {
+
+        message("Go to the diner.");
+
+        return;
+    }
+
+    if(money < 25) {
+
+        message("Not enough money.");
+
+        return;
+    }
+
+    money -= 25;
+
+    hunger = 100;
+    thirst = Math.min(100, thirst + 20);
+
+    message("🍔 You ate a meal. -$25");
+}
+
+
+/* =========================
+   SLEEP
+========================= */
+
+function sleep() {
+
+    if(player.insideTruck) {
+
+        message("Exit the truck first.");
+
+        return;
+    }
+
+    if(distanceToLocation(locations.rest) > 230) {
+
+        message("Go to the rest area.");
+
+        return;
+    }
+
+    energy = 100;
+
+    hunger = Math.max(0, hunger - 10);
+    thirst = Math.max(0, thirst - 10);
+
+    day++;
+
+    message("😴 You slept. New day!");
+}
+
+
+/* =========================
+   TRUCK UPDATE
+========================= */
+
+function updateTruck() {
+
+    if(!player.insideTruck)
+        return;
+
+
+    if(keys.gas) {
+
+        truck.speed += 0.12;
+
+    } else if(keys.brake) {
+
+        truck.speed -= 0.18;
+
+    } else {
+
+        truck.speed *= 0.97;
+
+    }
+
+
+    truck.speed = Math.max(-2, Math.min(6, truck.speed));
+
+
+    if(keys.left)
+        truck.angle -= 0.045 * Math.abs(truck.speed);
+
+    if(keys.right)
+        truck.angle += 0.045 * Math.abs(truck.speed);
+
+
+    if(truck.fuel <= 0) {
+
+        truck.speed = 0;
+
+    }
+
+
+    truck.x += Math.cos(truck.angle) * truck.speed;
+    truck.y += Math.sin(truck.angle) * truck.speed;
+
+
+    truck.x = Math.max(
+        30,
+        Math.min(world.width - 30, truck.x)
+    );
+
+    truck.y = Math.max(
+        30,
+        Math.min(world.height - 30, truck.y)
+    );
+
+
+    truck.fuel -= Math.abs(truck.speed) * 0.002;
+
+    truck.fuel = Math.max(0, truck.fuel);
+
+
+    player.x = truck.x;
+    player.y = truck.y;
+    player.angle = truck.angle;
+}
+
+
+/* =========================
+   PLAYER UPDATE
+========================= */
+
+function updatePlayer() {
+
+    if(player.insideTruck)
+        return;
+
+
+    let dx = 0;
+    let dy = 0;
+
+    if(keys.left) dx -= 1;
+    if(keys.right) dx += 1;
+    if(keys.gas) dy -= 1;
+    if(keys.brake) dy += 1;
+
+
+    if(dx || dy) {
+
+        const length = Math.hypot(dx,dy);
+
+        dx /= length;
+        dy /= length;
+
+        player.x += dx * 3;
+        player.y += dy * 3;
+
+        player.angle = Math.atan2(dy,dx);
+
+        player.walking = true;
+
+        player.animation++;
+
+    } else {
+
+        player.walking = false;
+
+    }
+
+
+    player.x = Math.max(
+        20,
+        Math.min(world.width - 20, player.x)
+    );
+
+    player.y = Math.max(
+        20,
+        Math.min(world.height - 20, player.y)
+    );
+}
+
+
+/* =========================
+   LIFE
+========================= */
+
+function updateLife() {
+
+    hunger -= 0.003;
+    thirst -= 0.004;
+    energy -= 0.002;
+
+    hunger = Math.max(0,hunger);
+    thirst = Math.max(0,thirst);
+    energy = Math.max(0,energy);
+}
+
+
+/* =========================
+   DRAW BUILDING
+========================= */
+
+function drawLocation(location,color) {
+
+    ctx.fillStyle = color;
+
+    ctx.fillRect(
+        location.x,
+        location.y,
+        location.width,
+        location.height
+    );
+
+    ctx.fillStyle = "white";
+
+    ctx.font = "bold 18px Arial";
+
+    ctx.fillText(
+        location.name,
+        location.x + 12,
+        location.y + 30
+    );
+}
+
+
+/* =========================
+   DRAW TRUCK
+========================= */
+
+function drawTruck() {
+
+    ctx.save();
+
+    ctx.translate(truck.x,truck.y);
+
+    ctx.rotate(truck.angle);
+
+
+    /* wheels */
+
+    ctx.fillStyle = "#111";
+
+    ctx.fillRect(-48,-30,24,10);
+    ctx.fillRect(25,-30,24,10);
+    ctx.fillRect(-48,20,24,10);
+    ctx.fillRect(25,20,24,10);
+
+
+    /* trailer */
+
+    ctx.fillStyle = "#d6dce0";
+
+    ctx.fillRect(
+        -65,
+        -23,
+        75,
+        46
+    );
+
+
+    /* cabin */
+
+    ctx.fillStyle = "#263b4a";
+
+    ctx.fillRect(
+        10,
+        -22,
+        45,
+        44
+    );
+
+
+    /* windows */
+
+    ctx.fillStyle = "#6d9bb3";
+
+    ctx.fillRect(
+        28,
+        -17,
+        20,
+        14
+    );
+
+    ctx.fillRect(
+        28,
+        3,
+        20,
+        14
+    );
+
+
+    /* headlights */
+
+    ctx.fillStyle = "#fff4a8";
+
+    ctx.fillRect(52,-15,6,9);
+    ctx.fillRect(52,6,6,9);
+
+
+    ctx.restore();
+}
+
+
+/* =========================
+   DRAW PLAYER
+========================= */
+
+function drawPlayer() {
+
+    if(player.insideTruck)
+        return;
+
+
+    ctx.save();
+
+    ctx.translate(
+        player.x,
+        player.y
+    );
+
+    ctx.rotate(player.angle);
+
+
+    const walk =
+        player.walking
+        ? Math.sin(player.animation * 0.5) * 4
+        : 0;
+
+
+    /* legs */
+
+    ctx.fillStyle = "#18202a";
+
+    ctx.fillRect(
+        -7,
+        7 + walk,
+        6,
+        17
+    );
+
+    ctx.fillRect(
+        2,
+        7 - walk,
+        6,
+        17
+    );
+
+
+    /* body */
+
+    ctx.fillStyle = "#3973a6";
+
+    ctx.fillRect(
+        -10,
+        -8,
+        20,
+        20
+    );
+
+
+    /* head */
+
+    ctx.fillStyle = "#e4b08b";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        0,
+        -17,
+        8,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* hair */
+
+    ctx.fillStyle = "#222";
+
+    ctx.fillRect(
+        -7,
+        -24,
+        14,
+        5
+    );
+
+
+    ctx.restore();
+}
+
+
+/* =========================
+   DRAW WORLD
+========================= */
+
+function drawWorld() {
+
+    const focusX =
+        player.insideTruck
+        ? truck.x
+        : player.x;
+
+    const focusY =
+        player.insideTruck
+        ? truck.y
+        : player.y;
+
+
+    const cameraX =
+        Math.max(
+            0,
+            Math.min(
+                world.width - W,
+                focusX - W/2
+            )
+        );
+
+
+    const cameraY =
+        Math.max(
+            0,
+            Math.min(
+                world.height - H,
+                focusY - H/2
+            )
+        );
+
+
+    ctx.fillStyle = "#68a653";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    ctx.save();
+
+    ctx.translate(
+        -cameraX,
+        -cameraY
+    );
+
+
+    /* roads */
+
+    ctx.fillStyle = "#454b50";
+
+    ctx.fillRect(
+        0,
+        650,
+        world.width,
+        230
+    );
+
+    ctx.fillRect(
+        1050,
+        0,
+        180,
+        world.height
+    );
+
+
+    /* road lines */
+
+    ctx.fillStyle = "#e3d46c";
+
+    for(let x=0;x<world.width;x+=100) {
+
+        ctx.fillRect(
+            x,
+            760,
+            55,
+            5
+        );
+    }
+
+
+    for(let y=0;y<world.height;y+=100) {
+
+        ctx.fillRect(
+            1135,
+            y,
+            5,
+            55
+        );
+    }
+
+
+    /* buildings */
+
+    drawLocation(
+        locations.office,
+        "#59636c"
+    );
+
+    drawLocation(
+        locations.warehouse,
+        "#7a6651"
+    );
+
+    drawLocation(
+        locations.gas,
+        "#bd7c32"
+    );
+
+    drawLocation(
+        locations.diner,
+        "#9a5863"
+    );
+
+    drawLocation(
+        locations.rest,
+        "#526f58"
+    );
+
+    drawLocation(
+        locations.depot,
+        "#626873"
+    );
+
+
+    /* contract marker */
+
+    if(contract) {
+
+        let target =
+            contract.loaded
+            ? locations.depot
+            : locations.warehouse;
+
+
+        ctx.strokeStyle = "#ffe45d";
+
+        ctx.lineWidth = 6;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            target.x + target.width/2,
+            target.y + target.height/2,
+            70,
+            0,
+            Math.PI*2
+        );
+
+        ctx.stroke();
+    }
+
+
+    drawTruck();
+
+    drawPlayer();
+
+
+    ctx.restore();
+}
+
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD() {
+
+    document.getElementById("money").innerText =
+        Math.floor(money);
+
+    document.getElementById("fuel").innerText =
+        Math.floor(truck.fuel);
+
+    document.getElementById("hunger").innerText =
+        Math.floor(hunger);
+
+    document.getElementById("thirst").innerText =
+        Math.floor(thirst);
+
+    document.getElementById("energy").innerText =
+        Math.floor(energy);
+
+    document.getElementById("day").innerText =
+        day;
+}
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function gameLoop() {
+
+    updateTruck();
+
+    updatePlayer();
+
+    updateLife();
+
+    updateHUD();
+
+    drawWorld();
+
+    requestAnimationFrame(gameLoop);
+}
+
+
+updateContract();
+
+gameLoop();
+
+</script>
+
+</body>
+  </html>
