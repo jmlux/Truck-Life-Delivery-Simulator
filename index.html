@@ -2,1343 +2,1017 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Truck Life - Delivery Simulator</title>
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<title>Truck Life 3D</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    user-select: none;
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #111;
+    font-family: Arial, sans-serif;
+    touch-action: none;
 }
 
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #20252b;
-    font-family: Arial, sans-serif;
-    color: white;
+#game {
+    position: fixed;
+    inset: 0;
 }
 
 canvas {
     display: block;
-    width: 100vw;
-    height: 100vh;
-    background: #68a653;
 }
+
+
+/* HUD */
 
 #hud {
     position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-    background: rgba(0,0,0,.75);
+    top: 12px;
+    left: 12px;
+    color: white;
+    background: rgba(0,0,0,.55);
     padding: 12px;
     border-radius: 12px;
+    z-index: 10;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.6;
 }
 
-#contract {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    width: 230px;
-    background: rgba(0,0,0,.8);
-    padding: 12px;
-    border-radius: 12px;
-    z-index: 10;
-    font-size: 13px;
+#title {
+    font-size: 18px;
+    font-weight: bold;
 }
 
-#message {
-    position: fixed;
-    top: 25%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    background: rgba(0,0,0,.9);
-    padding: 15px 22px;
-    border-radius: 12px;
-    display: none;
-    z-index: 20;
-    text-align: center;
-}
 
-.controls {
+/* Mobile controls */
+
+#controls {
     position: fixed;
-    bottom: 15px;
-    left: 15px;
-    right: 15px;
+    left: 0;
+    right: 0;
+    bottom: 18px;
     display: flex;
     justify-content: space-between;
-    z-index: 15;
+    padding: 0 18px;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.controlGroup {
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
 }
 
 button {
-    width: 60px;
-    height: 60px;
-    margin: 4px;
-    border: 1px solid #777;
-    border-radius: 15px;
-    background: rgba(0,0,0,.75);
+    width: 64px;
+    height: 64px;
+    border: none;
+    border-radius: 18px;
+    background: rgba(0,0,0,.65);
     color: white;
-    font-size: 18px;
+    font-size: 24px;
+    font-weight: bold;
+    touch-action: none;
 }
 
 button:active {
-    transform: scale(.92);
-    background: #34434c;
+    transform: scale(.94);
+    background: rgba(255,255,255,.25);
 }
 
-.rightButtons {
-    display: flex;
-    align-items: end;
+#hint {
+    position: fixed;
+    bottom: 92px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0,0,0,.5);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    z-index: 10;
+    white-space: nowrap;
 }
 
-.small {
-    width: 55px;
-    height: 55px;
-    font-size: 12px;
-}
-
-#interact {
-    width: 85px;
-}
 </style>
 </head>
 
 <body>
 
-<canvas id="game"></canvas>
+<div id="game"></div>
 
 <div id="hud">
-    💰 Money: $<span id="money">2500</span><br>
-    ⛽ Fuel: <span id="fuel">100</span>%<br>
-    🍔 Hunger: <span id="hunger">100</span>%<br>
-    💧 Thirst: <span id="thirst">100</span>%<br>
-    ⚡ Energy: <span id="energy">100</span>%<br>
-    📅 Day: <span id="day">1</span>
+    <div id="title">🚛 Truck Life 3D</div>
+    <div>Mode: <span id="mode">Walking</span></div>
+    <div>Speed: <span id="speed">0</span> km/h</div>
 </div>
 
-<div id="contract">
-    <b>📦 CONTRACT</b>
-    <hr>
-    <div id="contractText">
-        No active contract.
-    </div>
+<div id="hint">
+    Walk around • Explore your truck
 </div>
 
-<div id="message"></div>
+<div id="controls">
 
-<div class="controls">
+    <div class="controlGroup">
 
-    <div>
         <button id="left">◀</button>
+
         <button id="right">▶</button>
+
     </div>
 
-    <div>
-        <button id="gas">▲</button>
-        <button id="brake">▼</button>
-    </div>
+    <div class="controlGroup">
 
-    <div class="rightButtons">
-        <button class="small" onclick="enterExit()">🚪</button>
-        <button class="small" onclick="interact()">✋</button>
-        <button class="small" onclick="eat()">🍔</button>
-        <button class="small" onclick="sleep()">🛏️</button>
+        <button id="forward">▲</button>
+
+        <button id="back">▼</button>
+
     </div>
 
 </div>
+
+
+<!-- Three.js -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
 
 <script>
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+/* =====================================================
+   BASIC SETUP
+===================================================== */
 
-let W = innerWidth;
-let H = innerHeight;
+const scene =
+    new THREE.Scene();
 
-function resize() {
-    W = innerWidth;
-    H = innerHeight;
-    canvas.width = W;
-    canvas.height = H;
+scene.background =
+    new THREE.Color(0x87ceeb);
+
+
+/* Camera */
+
+const camera =
+    new THREE.PerspectiveCamera(
+        65,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+
+
+/* Renderer */
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias: true
+    });
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+);
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.shadowMap.enabled = true;
+
+document
+    .getElementById("game")
+    .appendChild(renderer.domElement);
+
+
+/* =====================================================
+   LIGHTING
+===================================================== */
+
+const ambient =
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x555555,
+        2
+    );
+
+scene.add(ambient);
+
+
+const sun =
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+sun.position.set(
+    50,
+    80,
+    30
+);
+
+sun.castShadow = true;
+
+scene.add(sun);
+
+
+/* =====================================================
+   GROUND
+===================================================== */
+
+const groundMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x5fa34a
+    });
+
+
+const ground =
+    new THREE.Mesh(
+        new THREE.PlaneGeometry(
+            300,
+            300
+        ),
+        groundMaterial
+    );
+
+ground.rotation.x =
+    -Math.PI / 2;
+
+ground.receiveShadow = true;
+
+scene.add(ground);
+
+
+/* =====================================================
+   ROAD
+===================================================== */
+
+const roadMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x3d4145
+    });
+
+
+const road =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            300,
+            .1,
+            18
+        ),
+        roadMaterial
+    );
+
+road.position.y = .05;
+
+scene.add(road);
+
+
+/* Road markings */
+
+for (
+    let x = -140;
+    x < 140;
+    x += 14
+) {
+
+    const line =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                7,
+                .12,
+                .25
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0xffe66d
+            })
+        );
+
+    line.position.set(
+        x,
+        .12,
+        0
+    );
+
+    scene.add(line);
 }
 
-resize();
-window.addEventListener("resize", resize);
+
+/* =====================================================
+   BUILDING FUNCTION
+===================================================== */
+
+function createBuilding(
+    x,
+    z,
+    width,
+    height,
+    depth,
+    color
+) {
+
+    const material =
+        new THREE.MeshStandardMaterial({
+            color: color
+        });
 
 
-/* =========================
+    const building =
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                width,
+                height,
+                depth
+            ),
+            material
+        );
+
+
+    building.position.set(
+        x,
+        height / 2,
+        z
+    );
+
+    building.castShadow = true;
+    building.receiveShadow = true;
+
+    scene.add(building);
+
+    return building;
+}
+
+
+/* Buildings */
+
+createBuilding(
+    -35,
+    -25,
+    18,
+    8,
+    15,
+    0x59636c
+);
+
+
+createBuilding(
+    35,
+    -28,
+    25,
+    7,
+    18,
+    0x7a6651
+);
+
+
+createBuilding(
+    -38,
+    25,
+    16,
+    6,
+    16,
+    0x9a5863
+);
+
+
+/* =====================================================
+   TREE FUNCTION
+===================================================== */
+
+function createTree(x, z) {
+
+    const trunk =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .35,
+                .45,
+                3,
+                8
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x6b4328
+            })
+        );
+
+    trunk.position.set(
+        x,
+        1.5,
+        z
+    );
+
+    trunk.castShadow = true;
+
+    scene.add(trunk);
+
+
+    const leaves =
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                2.2,
+                10,
+                10
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x287a35
+            })
+        );
+
+    leaves.position.set(
+        x,
+        4,
+        z
+    );
+
+    leaves.castShadow = true;
+
+    scene.add(leaves);
+}
+
+
+for (
+    let i = 0;
+    i < 30;
+    i++
+) {
+
+    const x =
+        (Math.random() - .5) * 240;
+
+    const z =
+        (Math.random() - .5) * 240;
+
+    if (
+        Math.abs(z) < 14
+    ) continue;
+
+    createTree(x, z);
+}
+
+
+/* =====================================================
    PLAYER
-========================= */
+===================================================== */
 
-let player = {
-    x: 1100,
-    y: 800,
-    angle: 0,
-    walking: false,
-    insideTruck: true,
-    animation: 0
-};
+const player =
+    new THREE.Group();
 
 
-/* =========================
+scene.add(player);
+
+player.position.set(
+    0,
+    0,
+    8
+);
+
+
+/* Body */
+
+const body =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            1.1,
+            1.6,
+            .65
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x263746
+        })
+    );
+
+body.position.y =
+    1.5;
+
+body.castShadow = true;
+
+player.add(body);
+
+
+/* Head */
+
+const head =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .42,
+            16,
+            16
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xd7a47d
+        })
+    );
+
+head.position.y =
+    2.65;
+
+head.castShadow = true;
+
+player.add(head);
+
+
+/* Hair */
+
+const hair =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            .43,
+            16,
+            16
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x202020
+        })
+    );
+
+hair.scale.y = .55;
+
+hair.position.y =
+    2.9;
+
+player.add(hair);
+
+
+/* Legs */
+
+const legMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x202020
+    });
+
+
+const leftLeg =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .3,
+            1.1,
+            .35
+        ),
+        legMaterial
+    );
+
+leftLeg.position.set(
+    -.25,
+    .55,
+    0
+);
+
+leftLeg.castShadow = true;
+
+player.add(leftLeg);
+
+
+const rightLeg =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            .3,
+            1.1,
+            .35
+        ),
+        legMaterial
+    );
+
+rightLeg.position.set(
+    .25,
+    .55,
+    0
+);
+
+rightLeg.castShadow = true;
+
+player.add(rightLeg);
+
+
+/* =====================================================
    TRUCK
-========================= */
-
-let truck = {
-    x: 1100,
-    y: 800,
-    angle: 0,
-    speed: 0,
-    fuel: 100,
-    condition: 100
-};
-
-
-/* =========================
-   LIFE
-========================= */
-
-let money = 2500;
-let hunger = 100;
-let thirst = 100;
-let energy = 100;
-let day = 1;
-
-
-/* =========================
-   CONTRACT
-========================= */
-
-let contract = null;
-
-
-/* =========================
-   WORLD
-========================= */
-
-const world = {
-    width: 2400,
-    height: 1600
-};
-
-const locations = {
-
-    office: {
-        x: 200,
-        y: 200,
-        width: 350,
-        height: 220,
-        name: "CONTRACT OFFICE"
-    },
-
-    warehouse: {
-        x: 1850,
-        y: 180,
-        width: 350,
-        height: 250,
-        name: "WAREHOUSE"
-    },
-
-    gas: {
-        x: 950,
-        y: 200,
-        width: 280,
-        height: 180,
-        name: "GAS STATION"
-    },
+===================================================== */
 
-    diner: {
-        x: 1350,
-        y: 1100,
-        width: 300,
-        height: 190,
-        name: "DINER"
-    },
+const truck =
+    new THREE.Group();
 
-    rest: {
-        x: 450,
-        y: 1150,
-        width: 330,
-        height: 200,
-        name: "REST AREA"
-    },
 
-    depot: {
-        x: 1850,
-        y: 1100,
-        width: 350,
-        height: 240,
-        name: "CITY DEPOT"
-    }
-};
+scene.add(truck);
 
+truck.position.set(
+    0,
+    0,
+    -5
+);
 
-/* =========================
-   INPUT
-========================= */
 
-let keys = {
-    left:false,
-    right:false,
-    gas:false,
-    brake:false
-};
+/* Truck body */
 
-function hold(button, key) {
+const truckBody =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            3.2,
+            2,
+            6
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0xb52b2b
+        })
+    );
 
-    button.addEventListener("pointerdown", () => {
-        keys[key] = true;
-    });
+truckBody.position.y =
+    1.5;
 
-    button.addEventListener("pointerup", () => {
-        keys[key] = false;
-    });
+truckBody.castShadow = true;
 
-    button.addEventListener("pointerleave", () => {
-        keys[key] = false;
-    });
-}
+truck.add(truckBody);
 
-hold(document.getElementById("left"), "left");
-hold(document.getElementById("right"), "right");
-hold(document.getElementById("gas"), "gas");
-hold(document.getElementById("brake"), "brake");
 
+/* Cabin */
 
-/* KEYBOARD */
+const cabin =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            3,
+            2.2,
+            2.2
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x2e536d
+        })
+    );
 
-window.addEventListener("keydown", e => {
+cabin.position.set(
+    0,
+    2.2,
+    1.7
+);
 
-    if(e.key === "ArrowLeft" || e.key === "a")
-        keys.left = true;
+cabin.castShadow = true;
 
-    if(e.key === "ArrowRight" || e.key === "d")
-        keys.right = true;
+truck.add(cabin);
 
-    if(e.key === "ArrowUp" || e.key === "w")
-        keys.gas = true;
 
-    if(e.key === "ArrowDown" || e.key === "s")
-        keys.brake = true;
+/* Wheels */
 
-    if(e.key === "e")
-        interact();
+function createWheel(x, z) {
 
-    if(e.key === "f")
-        enterExit();
-});
-
-window.addEventListener("keyup", e => {
-
-    if(e.key === "ArrowLeft" || e.key === "a")
-        keys.left = false;
-
-    if(e.key === "ArrowRight" || e.key === "d")
-        keys.right = false;
-
-    if(e.key === "ArrowUp" || e.key === "w")
-        keys.gas = false;
-
-    if(e.key === "ArrowDown" || e.key === "s")
-        keys.brake = false;
-});
-
-
-/* =========================
-   MESSAGE
-========================= */
-
-function message(text) {
-
-    const box = document.getElementById("message");
-
-    box.innerText = text;
-    box.style.display = "block";
-
-    clearTimeout(window.msgTimer);
-
-    window.msgTimer = setTimeout(() => {
-        box.style.display = "none";
-    }, 2200);
-}
-
-
-/* =========================
-   CONTRACT
-========================= */
-
-function createContract() {
-
-    if(contract) {
-        message("Finish your current contract first.");
-        return;
-    }
-
-    contract = {
-        cargo: "Food Supplies",
-        reward: 1800,
-        loaded: false,
-        from: "warehouse",
-        to: "depot"
-    };
-
-    updateContract();
-
-    message("New contract accepted!");
-}
-
-function updateContract() {
-
-    const box = document.getElementById("contractText");
-
-    if(!contract) {
-
-        box.innerHTML = "No active contract.<br><br>Go to the Contract Office.";
-
-        return;
-    }
-
-    box.innerHTML =
-        "Cargo: <b>" + contract.cargo + "</b><br>" +
-        "Reward: <b>$" + contract.reward + "</b><br><br>" +
-        (contract.loaded
-            ? "Deliver to: CITY DEPOT"
-            : "Pickup: WAREHOUSE");
-}
-
-
-/* =========================
-   ENTER / EXIT
-========================= */
-
-function enterExit() {
-
-    if(player.insideTruck) {
-
-        player.insideTruck = false;
-
-        player.x = truck.x + 55;
-        player.y = truck.y;
-
-        player.angle = truck.angle;
-
-        truck.speed = 0;
-
-        message("You left the truck.");
-
-    } else {
-
-        const distance = Math.hypot(
-            player.x - truck.x,
-            player.y - truck.y
+    const wheel =
+        new THREE.Mesh(
+            new THREE.CylinderGeometry(
+                .65,
+                .65,
+                .45,
+                16
+            ),
+            new THREE.MeshStandardMaterial({
+                color: 0x151515
+            })
         );
 
-        if(distance < 100) {
+    wheel.rotation.z =
+        Math.PI / 2;
 
-            player.insideTruck = true;
+    wheel.position.set(
+        x,
+        .65,
+        z
+    );
 
-            player.x = truck.x;
-            player.y = truck.y;
+    wheel.castShadow = true;
 
-            message("You entered the truck.");
+    truck.add(wheel);
+}
 
-        } else {
 
-            message("Move closer to the truck.");
+createWheel(-1.65, 1.7);
+createWheel(1.65, 1.7);
 
+createWheel(-1.65, -1.7);
+createWheel(1.65, -1.7);
+
+
+/* =====================================================
+   PLAYER CONTROLS
+===================================================== */
+
+const keys = {
+    forward: false,
+    back: false,
+    left: false,
+    right: false
+};
+
+
+function bindButton(
+    id,
+    key
+) {
+
+    const button =
+        document.getElementById(id);
+
+
+    button.addEventListener(
+        "pointerdown",
+        e => {
+
+            e.preventDefault();
+
+            keys[key] = true;
         }
-    }
-}
+    );
 
 
-/* =========================
-   INTERACTION
-========================= */
+    button.addEventListener(
+        "pointerup",
+        e => {
 
-function interact() {
+            e.preventDefault();
 
-    if(player.insideTruck) {
-
-        message("Exit the truck first.");
-
-        return;
-    }
+            keys[key] = false;
+        }
+    );
 
 
-    /* OFFICE */
+    button.addEventListener(
+        "pointercancel",
+        () => {
 
-    if(distanceToLocation(locations.office) < 230) {
-
-        createContract();
-
-        return;
-    }
-
-
-    /* WAREHOUSE */
-
-    if(contract &&
-       !contract.loaded &&
-       distanceToLocation(locations.warehouse) < 230) {
-
-        contract.loaded = true;
-
-        message("📦 Cargo loaded! Deliver it to City Depot.");
-
-        updateContract();
-
-        return;
-    }
+            keys[key] = false;
+        }
+    );
 
 
-    /* DEPOT */
+    button.addEventListener(
+        "pointerleave",
+        () => {
 
-    if(contract &&
-       contract.loaded &&
-       distanceToLocation(locations.depot) < 230) {
-
-        money += contract.reward;
-
-        message(
-            "🚚 Delivery complete! +$" +
-            contract.reward
-        );
-
-        contract = null;
-
-        updateContract();
-
-        return;
-    }
-
-
-    /* GAS */
-
-    if(distanceToLocation(locations.gas) < 210) {
-
-        refuel();
-
-        return;
-    }
-
-
-    message("Nothing to interact with here.");
-}
-
-
-/* =========================
-   DISTANCE
-========================= */
-
-function distanceToLocation(location) {
-
-    const cx = location.x + location.width / 2;
-    const cy = location.y + location.height / 2;
-
-    return Math.hypot(
-        player.x - cx,
-        player.y - cy
+            keys[key] = false;
+        }
     );
 }
 
 
-/* =========================
-   REFUEL
-========================= */
+bindButton(
+    "forward",
+    "forward"
+);
 
-function refuel() {
+bindButton(
+    "back",
+    "back"
+);
 
-    if(player.insideTruck) {
+bindButton(
+    "left",
+    "left"
+);
 
-        message("Get out of the truck to refuel.");
+bindButton(
+    "right",
+    "right"
+);
 
-        return;
+
+/* Keyboard */
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        if(e.key === "w")
+            keys.forward = true;
+
+        if(e.key === "s")
+            keys.back = true;
+
+        if(e.key === "a")
+            keys.left = true;
+
+        if(e.key === "d")
+            keys.right = true;
     }
+);
 
-    if(distanceToLocation(locations.gas) > 220) {
 
-        message("Go to the gas station.");
+window.addEventListener(
+    "keyup",
+    e => {
 
-        return;
+        if(e.key === "w")
+            keys.forward = false;
+
+        if(e.key === "s")
+            keys.back = false;
+
+        if(e.key === "a")
+            keys.left = false;
+
+        if(e.key === "d")
+            keys.right = false;
     }
+);
 
-    const amount = 100 - truck.fuel;
-    const price = Math.ceil(amount * 1);
 
-    if(money < price) {
+/* =====================================================
+   MOVEMENT
+===================================================== */
 
-        message("Not enough money.");
+let walkAnimation = 0;
 
-        return;
-    }
-
-    money -= price;
-    truck.fuel = 100;
-
-    message("⛽ Truck refueled! -$" + price);
-}
-
-
-/* =========================
-   EAT
-========================= */
-
-function eat() {
-
-    if(player.insideTruck) {
-
-        message("You need to leave the truck.");
-
-        return;
-    }
-
-    if(distanceToLocation(locations.diner) > 220) {
-
-        message("Go to the diner.");
-
-        return;
-    }
-
-    if(money < 25) {
-
-        message("Not enough money.");
-
-        return;
-    }
-
-    money -= 25;
-
-    hunger = 100;
-    thirst = Math.min(100, thirst + 20);
-
-    message("🍔 You ate a meal. -$25");
-}
-
-
-/* =========================
-   SLEEP
-========================= */
-
-function sleep() {
-
-    if(player.insideTruck) {
-
-        message("Exit the truck first.");
-
-        return;
-    }
-
-    if(distanceToLocation(locations.rest) > 230) {
-
-        message("Go to the rest area.");
-
-        return;
-    }
-
-    energy = 100;
-
-    hunger = Math.max(0, hunger - 10);
-    thirst = Math.max(0, thirst - 10);
-
-    day++;
-
-    message("😴 You slept. New day!");
-}
-
-
-/* =========================
-   TRUCK UPDATE
-========================= */
-
-function updateTruck() {
-
-    if(!player.insideTruck)
-        return;
-
-
-    if(keys.gas) {
-
-        truck.speed += 0.12;
-
-    } else if(keys.brake) {
-
-        truck.speed -= 0.18;
-
-    } else {
-
-        truck.speed *= 0.97;
-
-    }
-
-
-    truck.speed = Math.max(-2, Math.min(6, truck.speed));
-
-
-    if(keys.left)
-        truck.angle -= 0.045 * Math.abs(truck.speed);
-
-    if(keys.right)
-        truck.angle += 0.045 * Math.abs(truck.speed);
-
-
-    if(truck.fuel <= 0) {
-
-        truck.speed = 0;
-
-    }
-
-
-    truck.x += Math.cos(truck.angle) * truck.speed;
-    truck.y += Math.sin(truck.angle) * truck.speed;
-
-
-    truck.x = Math.max(
-        30,
-        Math.min(world.width - 30, truck.x)
-    );
-
-    truck.y = Math.max(
-        30,
-        Math.min(world.height - 30, truck.y)
-    );
-
-
-    truck.fuel -= Math.abs(truck.speed) * 0.002;
-
-    truck.fuel = Math.max(0, truck.fuel);
-
-
-    player.x = truck.x;
-    player.y = truck.y;
-    player.angle = truck.angle;
-}
-
-
-/* =========================
-   PLAYER UPDATE
-========================= */
 
 function updatePlayer() {
 
-    if(player.insideTruck)
-        return;
+    const speed = .10;
 
+    if(keys.left) {
 
-    let dx = 0;
-    let dy = 0;
-
-    if(keys.left) dx -= 1;
-    if(keys.right) dx += 1;
-    if(keys.gas) dy -= 1;
-    if(keys.brake) dy += 1;
-
-
-    if(dx || dy) {
-
-        const length = Math.hypot(dx,dy);
-
-        dx /= length;
-        dy /= length;
-
-        player.x += dx * 3;
-        player.y += dy * 3;
-
-        player.angle = Math.atan2(dy,dx);
-
-        player.walking = true;
-
-        player.animation++;
-
-    } else {
-
-        player.walking = false;
+        player.rotation.y += .045;
 
     }
 
 
-    player.x = Math.max(
-        20,
-        Math.min(world.width - 20, player.x)
-    );
+    if(keys.right) {
 
-    player.y = Math.max(
-        20,
-        Math.min(world.height - 20, player.y)
-    );
-}
+        player.rotation.y -= .045;
 
-
-/* =========================
-   LIFE
-========================= */
-
-function updateLife() {
-
-    hunger -= 0.003;
-    thirst -= 0.004;
-    energy -= 0.002;
-
-    hunger = Math.max(0,hunger);
-    thirst = Math.max(0,thirst);
-    energy = Math.max(0,energy);
-}
-
-
-/* =========================
-   DRAW BUILDING
-========================= */
-
-function drawLocation(location,color) {
-
-    ctx.fillStyle = color;
-
-    ctx.fillRect(
-        location.x,
-        location.y,
-        location.width,
-        location.height
-    );
-
-    ctx.fillStyle = "white";
-
-    ctx.font = "bold 18px Arial";
-
-    ctx.fillText(
-        location.name,
-        location.x + 12,
-        location.y + 30
-    );
-}
-
-
-/* =========================
-   DRAW TRUCK
-========================= */
-
-function drawTruck() {
-
-    ctx.save();
-
-    ctx.translate(truck.x,truck.y);
-
-    ctx.rotate(truck.angle);
-
-
-    /* wheels */
-
-    ctx.fillStyle = "#111";
-
-    ctx.fillRect(-48,-30,24,10);
-    ctx.fillRect(25,-30,24,10);
-    ctx.fillRect(-48,20,24,10);
-    ctx.fillRect(25,20,24,10);
-
-
-    /* trailer */
-
-    ctx.fillStyle = "#d6dce0";
-
-    ctx.fillRect(
-        -65,
-        -23,
-        75,
-        46
-    );
-
-
-    /* cabin */
-
-    ctx.fillStyle = "#263b4a";
-
-    ctx.fillRect(
-        10,
-        -22,
-        45,
-        44
-    );
-
-
-    /* windows */
-
-    ctx.fillStyle = "#6d9bb3";
-
-    ctx.fillRect(
-        28,
-        -17,
-        20,
-        14
-    );
-
-    ctx.fillRect(
-        28,
-        3,
-        20,
-        14
-    );
-
-
-    /* headlights */
-
-    ctx.fillStyle = "#fff4a8";
-
-    ctx.fillRect(52,-15,6,9);
-    ctx.fillRect(52,6,6,9);
-
-
-    ctx.restore();
-}
-
-
-/* =========================
-   DRAW PLAYER
-========================= */
-
-function drawPlayer() {
-  ctx.save();
-
-  ctx.translate(player.x, player.y);
-
-  // Direction the character is facing
-  ctx.rotate(player.angle);
-
-  // Walking animation
-  const walk = player.walking
-    ? Math.sin(player.animation * 0.8) * 4
-    : 0;
-
-  const armSwing = player.walking
-    ? Math.sin(player.animation * 0.8) * 0.18
-    : 0;
-
-  // Shadow
-  ctx.save();
-  ctx.rotate(-player.angle);
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.beginPath();
-  ctx.ellipse(0, 18, 13, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  // -------------------------
-  // LEGS
-  // -------------------------
-
-  ctx.strokeStyle = "#202020";
-  ctx.lineWidth = 6;
-  ctx.lineCap = "round";
-
-  // Left leg
-  ctx.save();
-  ctx.rotate(walk * 0.08);
-  ctx.beginPath();
-  ctx.moveTo(-5, 8);
-  ctx.lineTo(-7, 19 + walk);
-  ctx.stroke();
-  ctx.restore();
-
-  // Right leg
-  ctx.save();
-  ctx.rotate(-walk * 0.08);
-  ctx.beginPath();
-  ctx.moveTo(5, 8);
-  ctx.lineTo(7, 19 - walk);
-  ctx.stroke();
-  ctx.restore();
-
-  // Shoes
-  ctx.fillStyle = "#111";
-
-  ctx.beginPath();
-  ctx.ellipse(-8, 20 + walk, 6, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.ellipse(8, 20 - walk, 6, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // -------------------------
-  // BODY / DRIVER JACKET
-  // -------------------------
-
-  ctx.fillStyle = "#263746";
-  ctx.beginPath();
-  ctx.roundRect(-10, -12, 20, 25, 5);
-  ctx.fill();
-
-  // Shirt
-  ctx.fillStyle = "#e8e8e8";
-  ctx.beginPath();
-  ctx.moveTo(-3, -11);
-  ctx.lineTo(3, -11);
-  ctx.lineTo(4, 2);
-  ctx.lineTo(-4, 2);
-  ctx.closePath();
-  ctx.fill();
-
-  // -------------------------
-  // ARMS
-  // -------------------------
-
-  ctx.strokeStyle = "#d7a47d";
-  ctx.lineWidth = 5;
-
-  // Left arm
-  ctx.save();
-  ctx.rotate(armSwing);
-  ctx.beginPath();
-  ctx.moveTo(-9, -7);
-  ctx.lineTo(-14, 8);
-  ctx.stroke();
-  ctx.restore();
-
-  // Right arm
-  ctx.save();
-  ctx.rotate(-armSwing);
-  ctx.beginPath();
-  ctx.moveTo(9, -7);
-  ctx.lineTo(14, 8);
-  ctx.stroke();
-  ctx.restore();
-
-  // -------------------------
-  // NECK
-  // -------------------------
-
-  ctx.fillStyle = "#d7a47d";
-  ctx.fillRect(-4, -17, 8, 7);
-
-  // -------------------------
-  // HEAD
-  // -------------------------
-
-  ctx.fillStyle = "#e4b08a";
-  ctx.beginPath();
-  ctx.arc(0, -24, 9, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hair
-  ctx.fillStyle = "#202020";
-  ctx.beginPath();
-  ctx.arc(0, -27, 9, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  // Hair sides
-  ctx.fillRect(-9, -27, 4, 8);
-  ctx.fillRect(5, -27, 4, 8);
-
-  // -------------------------
-  // DRIVER CAP
-  // -------------------------
-
-  ctx.fillStyle = "#182633";
-  ctx.beginPath();
-  ctx.arc(0, -30, 8, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillRect(-10, -30, 20, 3);
-
-  // -------------------------
-  // SMALL DRIVER DETAILS
-  // -------------------------
-
-  // Backpack / radio
-  ctx.fillStyle = "#394b59";
-  ctx.fillRect(-13, -5, 4, 10);
-
-  ctx.restore();
     }
 
 
-/* =========================
-   DRAW WORLD
-========================= */
-
-function drawWorld() {
-
-    /* =========================
-       THIRD PERSON CAMERA
-       ========================= */
-
-    const focusX =
-        player.insideTruck
-        ? truck.x
-        : player.x;
-
-    const focusY =
-        player.insideTruck
-        ? truck.y
-        : player.y;
+    let moving = false;
 
 
-    /* Camera offset */
-    const cameraOffsetY =
-        player.insideTruck
-        ? 0
-        : -90;
+    if(keys.forward) {
 
-
-    let cameraX =
-        focusX - W / 2;
-
-
-    let cameraY =
-        focusY - H / 2 - cameraOffsetY;
-
-
-    /* Keep camera inside world */
-
-    cameraX = Math.max(
-        0,
-        Math.min(
-            world.width - W,
-            cameraX
-        )
-    );
-
-
-    cameraY = Math.max(
-        0,
-        Math.min(
-            world.height - H,
-            cameraY
-        )
-    );
-
-
-    /* =========================
-       BACKGROUND
-       ========================= */
-
-    ctx.fillStyle = "#68a653";
-
-    ctx.fillRect(
-        0,
-        0,
-        W,
-        H
-    );
-
-
-    ctx.save();
-
-
-    /* =========================
-       CAMERA
-       ========================= */
-
-    ctx.translate(
-        -cameraX,
-        -cameraY
-    );
-
-
-    /* =========================
-       ROADS
-       ========================= */
-
-    ctx.fillStyle = "#454b50";
-
-    ctx.fillRect(
-        0,
-        650,
-        world.width,
-        230
-    );
-
-
-    ctx.fillRect(
-        1050,
-        0,
-        180,
-        world.height
-    );
-
-
-    /* =========================
-       ROAD LINES
-       ========================= */
-
-    ctx.fillStyle = "#e3d46c";
-
-
-    for(
-        let x = 0;
-        x < world.width;
-        x += 100
-    ) {
-
-        ctx.fillRect(
-            x,
-            760,
-            55,
-            5
+        player.translateZ(
+            speed
         );
+
+        moving = true;
+
     }
 
 
-    for(
-        let y = 0;
-        y < world.height;
-        y += 100
-    ) {
+    if(keys.back) {
 
-        ctx.fillRect(
-            1135,
-            y,
-            5,
-            55
+        player.translateZ(
+            -speed
         );
+
+        moving = true;
+
     }
 
 
-    /* =========================
-       BUILDINGS
-       ========================= */
+    if(moving) {
 
-    drawLocation(
-        locations.office,
-        "#59636c"
-    );
+        walkAnimation += .25;
 
+        leftLeg.rotation.x =
+            Math.sin(walkAnimation) * .6;
 
-    drawLocation(
-        locations.warehouse,
-        "#7a6651"
-    );
+        rightLeg.rotation.x =
+            Math.sin(
+                walkAnimation + Math.PI
+            ) * .6;
 
+    }
+    else {
 
-    drawLocation(
-        locations.gas,
-        "#bd7c32"
-    );
+        leftLeg.rotation.x = 0;
+        rightLeg.rotation.x = 0;
 
-
-    drawLocation(
-        locations.diner,
-        "#9a5863"
-    );
+    }
 
 
-    drawLocation(
-        locations.rest,
-        "#526f58"
-    );
+    document.getElementById(
+        "speed"
+    ).textContent =
+        moving ? "5" : "0";
+}
 
 
-    drawLocation(
-        locations.depot,
-        "#626873"
-    );
+/* =====================================================
+   THIRD PERSON CAMERA
+===================================================== */
+
+function updateCamera() {
+
+    const cameraDistance = 8;
+
+    const cameraHeight = 4.5;
 
 
-    /* =========================
-       CONTRACT MARKER
-       ========================= */
-
-    if(contract) {
-
-        let target =
-            contract.loaded
-            ? locations.depot
-            : locations.warehouse;
-
-
-        ctx.strokeStyle = "#ffe45d";
-
-        ctx.lineWidth = 6;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-            target.x + target.width / 2,
-            target.y + target.height / 2,
-            70,
+    const offset =
+        new THREE.Vector3(
             0,
-            Math.PI * 2
+            cameraHeight,
+            -cameraDistance
         );
 
-        ctx.stroke();
-    }
+
+    offset.applyQuaternion(
+        player.quaternion
+    );
 
 
-    /* =========================
-       TRUCK
-       ========================= */
-
-    drawTruck();
+    const target =
+        player.position.clone();
 
 
-    /* =========================
-       PLAYER
-       ========================= */
-
-    if(!player.insideTruck) {
-
-        drawPlayer();
-
-    }
+    target.y += 1.6;
 
 
-    ctx.restore();
-    }
-    
-    
+    const desired =
+        target.clone().add(offset);
 
-/* =========================
-   HUD
-========================= */
 
-function updateHUD() {
+    camera.position.lerp(
+        desired,
+        .12
+    );
 
-    document.getElementById("money").innerText =
-        Math.floor(money);
 
-    document.getElementById("fuel").innerText =
-        Math.floor(truck.fuel);
-
-    document.getElementById("hunger").innerText =
-        Math.floor(hunger);
-
-    document.getElementById("thirst").innerText =
-        Math.floor(thirst);
-
-    document.getElementById("energy").innerText =
-        Math.floor(energy);
-
-    document.getElementById("day").innerText =
-        day;
+    camera.lookAt(
+        target
+    );
 }
 
 
-/* =========================
-   GAME LOOP
-========================= */
+/* =====================================================
+   ANIMATION LOOP
+===================================================== */
 
-function gameLoop() {
+function animate() {
 
-    updateTruck();
+    requestAnimationFrame(
+        animate
+    );
+
 
     updatePlayer();
 
-    updateLife();
+    updateCamera();
 
-    updateHUD();
 
-    drawWorld();
-
-    requestAnimationFrame(gameLoop);
+    renderer.render(
+        scene,
+        camera
+    );
 }
 
 
-updateContract();
+animate();
 
-gameLoop();
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+    }
+);
 
 </script>
 
 </body>
-  </html>
+    </html>
+
+
+
+
+
+
+
+    
+        
+
+    
+    
+  
+  
+
+  
+
+        
+            
+
