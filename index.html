@@ -3,184 +3,282 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0,
-               maximum-scale=1.0,
-               user-scalable=no">
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Truck Life 3D</title>
+<title>Truck Life: Delivery Simulator</title>
 
 <style>
-
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #111;
-    font-family: Arial, sans-serif;
-    touch-action: none;
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
 }
 
-#game {
-    position: fixed;
-    inset: 0;
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#111;
+    font-family:Arial,Helvetica,sans-serif;
+    touch-action:none;
 }
 
-canvas {
-    display: block;
+canvas{
+    display:block;
+    width:100%;
+    height:100%;
 }
 
+/* ================= HUD ================= */
 
-/* HUD */
-
-#hud {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    color: white;
-    background: rgba(0,0,0,.55);
-    padding: 12px;
-    border-radius: 12px;
-    z-index: 10;
-    font-size: 14px;
-    line-height: 1.6;
+#hud{
+    position:fixed;
+    top:12px;
+    left:12px;
+    z-index:20;
+    color:white;
+    background:rgba(0,0,0,.58);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:14px;
+    line-height:1.5;
+    backdrop-filter:blur(6px);
+    pointer-events:none;
 }
 
-#title {
-    font-size: 18px;
-    font-weight: bold;
+#title{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:3px;
 }
 
-
-/* Mobile controls */
-
-#controls {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 18px;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 18px;
-    z-index: 20;
-    pointer-events: none;
+#status{
+    color:#ddd;
 }
 
-.controlGroup {
-    display: flex;
-    gap: 10px;
-    pointer-events: auto;
+/* ================= ROTATE SCREEN ================= */
+
+#rotateMessage{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    background:#111;
+    color:white;
+    padding:30px;
 }
 
-button {
-    width: 64px;
-    height: 64px;
-    border: none;
-    border-radius: 18px;
-    background: rgba(0,0,0,.65);
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    touch-action: none;
+#rotateMessage .phone{
+    font-size:60px;
+    margin-bottom:15px;
 }
 
-button:active {
-    transform: scale(.94);
-    background: rgba(255,255,255,.25);
+#rotateMessage h2{
+    margin:0 0 8px;
 }
 
-#hint {
-    position: fixed;
-    bottom: 92px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: white;
-    background: rgba(0,0,0,.5);
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    z-index: 10;
-    white-space: nowrap;
+#rotateMessage p{
+    margin:0;
+    color:#bbb;
 }
 
+/* ================= JOYSTICK ================= */
+
+#joystickArea{
+    position:fixed;
+    left:20px;
+    bottom:22px;
+    width:150px;
+    height:150px;
+    z-index:30;
+    touch-action:none;
+}
+
+#joystickBase{
+    position:absolute;
+    left:15px;
+    top:15px;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:rgba(255,255,255,.12);
+    border:2px solid rgba(255,255,255,.28);
+    box-shadow:
+        inset 0 0 25px rgba(0,0,0,.25),
+        0 4px 15px rgba(0,0,0,.2);
+}
+
+#joystickStick{
+    position:absolute;
+    left:45px;
+    top:45px;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:rgba(255,255,255,.38);
+    border:2px solid rgba(255,255,255,.6);
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+
+/* ================= CAMERA AREA ================= */
+
+#lookArea{
+    position:fixed;
+    right:0;
+    top:0;
+    width:58%;
+    height:100%;
+    z-index:10;
+    touch-action:none;
+}
+
+/* ================= SMALL BUTTONS ================= */
+
+#buttons{
+    position:fixed;
+    right:18px;
+    bottom:20px;
+    z-index:30;
+    display:flex;
+    gap:10px;
+    pointer-events:none;
+}
+
+.actionButton{
+    width:58px;
+    height:58px;
+    border:none;
+    border-radius:50%;
+    background:rgba(0,0,0,.55);
+    color:white;
+    font-size:22px;
+    border:1px solid rgba(255,255,255,.25);
+    pointer-events:auto;
+}
+
+.actionButton:active{
+    background:rgba(255,255,255,.3);
+}
+
+/* ================= DESKTOP ================= */
+
+#keyboardHint{
+    position:fixed;
+    bottom:12px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    color:rgba(255,255,255,.7);
+    background:rgba(0,0,0,.4);
+    padding:6px 12px;
+    border-radius:8px;
+    font-size:12px;
+    pointer-events:none;
+}
+
+/* ================= LANDSCAPE ================= */
+
+@media (orientation:portrait){
+    #rotateMessage{
+        display:flex;
+    }
+}
+
+@media (orientation:landscape){
+    #rotateMessage{
+        display:none;
+    }
+}
+
+@media (min-width:800px){
+    #joystickArea{
+        left:28px;
+        bottom:28px;
+    }
+
+    #buttons{
+        right:28px;
+        bottom:28px;
+    }
+}
 </style>
 </head>
 
 <body>
 
-<div id="game"></div>
+<div id="rotateMessage">
+    <div class="phone">📱↻</div>
+    <h2>Rotate Your Phone</h2>
+    <p>Truck Life is designed for landscape mode.</p>
+</div>
 
 <div id="hud">
-    <div id="title">🚛 Truck Life 3D</div>
-    <div>Mode: <span id="mode">Walking</span></div>
-    <div>Speed: <span id="speed">0</span> km/h</div>
+    <div id="title">🚚 Truck Life</div>
+    <div id="status">Explore the world</div>
+    <div>Speed: <span id="speed">0</span></div>
 </div>
 
-<div id="hint">
-    Walk around • Explore your truck
+<div id="joystickArea">
+    <div id="joystickBase"></div>
+    <div id="joystickStick"></div>
 </div>
 
-<div id="controls">
+<div id="lookArea"></div>
 
-    <div class="controlGroup">
-
-        <button id="left">◀</button>
-
-        <button id="right">▶</button>
-
-    </div>
-
-    <div class="controlGroup">
-
-        <button id="forward">▲</button>
-
-        <button id="back">▼</button>
-
-    </div>
-
+<div id="buttons">
+    <button class="actionButton" id="resetCamera">↻</button>
 </div>
 
-
-<!-- Three.js -->
+<div id="keyboardHint">
+    WASD / Arrow Keys • Drag right side to look
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
-
 <script>
 
-/* =====================================================
-   BASIC SETUP
-===================================================== */
+/* =========================================================
+   SCENE
+========================================================= */
 
-const scene =
-    new THREE.Scene();
+const scene = new THREE.Scene();
 
-scene.background =
-    new THREE.Color(0x87ceeb);
+scene.background = new THREE.Color(0x87ceeb);
 
-
-/* Camera */
-
-const camera =
-    new THREE.PerspectiveCamera(
-        65,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-    );
+scene.fog = new THREE.Fog(
+    0x87ceeb,
+    60,
+    230
+);
 
 
-/* Renderer */
+/* =========================================================
+   CAMERA
+========================================================= */
 
-const renderer =
-    new THREE.WebGLRenderer({
-        antialias: true
-    });
+const camera = new THREE.PerspectiveCamera(
+    65,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    500
+);
+
+
+/* =========================================================
+   RENDERER
+========================================================= */
+
+const renderer = new THREE.WebGLRenderer({
+    antialias:true
+});
 
 renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, 2)
+    Math.min(window.devicePixelRatio,2)
 );
 
 renderer.setSize(
@@ -189,31 +287,28 @@ renderer.setSize(
 );
 
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-document
-    .getElementById("game")
-    .appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement);
 
 
-/* =====================================================
+/* =========================================================
    LIGHTING
-===================================================== */
+========================================================= */
 
-const ambient =
-    new THREE.HemisphereLight(
-        0xffffff,
-        0x555555,
-        2
-    );
+const hemi = new THREE.HemisphereLight(
+    0xffffff,
+    0x668866,
+    1.5
+);
 
-scene.add(ambient);
+scene.add(hemi);
 
 
-const sun =
-    new THREE.DirectionalLight(
-        0xffffff,
-        2
-    );
+const sun = new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
 
 sun.position.set(
     50,
@@ -223,84 +318,97 @@ sun.position.set(
 
 sun.castShadow = true;
 
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+
+sun.shadow.camera.left = -100;
+sun.shadow.camera.right = 100;
+sun.shadow.camera.top = 100;
+sun.shadow.camera.bottom = -100;
+
 scene.add(sun);
 
 
-/* =====================================================
-   GROUND
-===================================================== */
+/* =========================================================
+   MATERIAL HELPERS
+========================================================= */
 
-const groundMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x5fa34a
+function mat(color){
+    return new THREE.MeshStandardMaterial({
+        color:color,
+        roughness:.8,
+        metalness:.05
     });
+}
 
 
-const ground =
-    new THREE.Mesh(
-        new THREE.PlaneGeometry(
-            300,
-            300
-        ),
-        groundMaterial
-    );
+/* =========================================================
+   GROUND
+========================================================= */
 
-ground.rotation.x =
-    -Math.PI / 2;
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(350,350),
+    mat(0x4f7942)
+);
 
+ground.rotation.x = -Math.PI/2;
 ground.receiveShadow = true;
 
 scene.add(ground);
 
 
-/* =====================================================
+/* =========================================================
    ROAD
-===================================================== */
+========================================================= */
 
-const roadMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x3d4145
-    });
+const road = new THREE.Mesh(
+    new THREE.PlaneGeometry(350,18),
+    mat(0x303238)
+);
 
+road.rotation.x = -Math.PI/2;
+road.position.y = .015;
 
-const road =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            300,
-            .1,
-            18
-        ),
-        roadMaterial
-    );
-
-road.position.y = .05;
+road.receiveShadow = true;
 
 scene.add(road);
 
 
-/* Road markings */
+/* =========================================================
+   ROAD MARKINGS
+========================================================= */
 
-for (
-    let x = -140;
-    x < 140;
-    x += 14
-) {
+for(let z=-170; z<170; z+=12){
 
-    const line =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                7,
-                .12,
-                .25
-            ),
-            new THREE.MeshStandardMaterial({
-                color: 0xffe66d
-            })
-        );
+    const line = new THREE.Mesh(
+        new THREE.BoxGeometry(2,.03,.9),
+        mat(0xffffff)
+    );
+
+    line.position.set(
+        0,
+        .04,
+        z
+    );
+
+    scene.add(line);
+}
+
+
+/* =========================================================
+   ROAD SIDE LINES
+========================================================= */
+
+for(const x of [-8.2,8.2]){
+
+    const line = new THREE.Mesh(
+        new THREE.BoxGeometry(.15,.04,350),
+        mat(0xffffff)
+    );
 
     line.position.set(
         x,
-        .12,
+        .04,
         0
     );
 
@@ -308,9 +416,9 @@ for (
 }
 
 
-/* =====================================================
+/* =========================================================
    BUILDING FUNCTION
-===================================================== */
+========================================================= */
 
 function createBuilding(
     x,
@@ -319,28 +427,20 @@ function createBuilding(
     height,
     depth,
     color
-) {
+){
 
-    const material =
-        new THREE.MeshStandardMaterial({
-            color: color
-        });
-
-
-    const building =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                width,
-                height,
-                depth
-            ),
-            material
-        );
-
+    const building = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            width,
+            height,
+            depth
+        ),
+        mat(color)
+    );
 
     building.position.set(
         x,
-        height / 2,
+        height/2,
         z
     );
 
@@ -349,123 +449,152 @@ function createBuilding(
 
     scene.add(building);
 
-    return building;
+
+    /* roof */
+
+    const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            width+.3,
+            .25,
+            depth+.3
+        ),
+        mat(0x333333)
+    );
+
+    roof.position.set(
+        x,
+        height+.12,
+        z
+    );
+
+    roof.castShadow = true;
+
+    scene.add(roof);
 }
 
 
-/* Buildings */
+/* =========================================================
+   BUILDINGS
+========================================================= */
 
 createBuilding(
-    -35,
     -25,
+    -20,
+    14,
+    9,
+    16,
+    0xb7b7b7
+);
+
+createBuilding(
+    27,
+    -55,
+    17,
+    12,
     18,
+    0xc98f6d
+);
+
+createBuilding(
+    -30,
+    45,
+    18,
+    11,
+    16,
+    0x8ca4bd
+);
+
+createBuilding(
+    30,
+    65,
+    15,
     8,
     15,
-    0x59636c
+    0xd5c38c
 );
 
 
-createBuilding(
-    35,
-    -28,
-    25,
-    7,
-    18,
-    0x7a6651
-);
-
-
-createBuilding(
-    -38,
-    25,
-    16,
-    6,
-    16,
-    0x9a5863
-);
-
-
-/* =====================================================
+/* =========================================================
    TREE FUNCTION
-===================================================== */
+========================================================= */
 
-function createTree(x, z) {
+function createTree(x,z){
 
-    const trunk =
-        new THREE.Mesh(
-            new THREE.CylinderGeometry(
-                .35,
-                .45,
-                3,
-                8
-            ),
-            new THREE.MeshStandardMaterial({
-                color: 0x6b4328
-            })
-        );
+    const tree = new THREE.Group();
 
-    trunk.position.set(
+    const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            .35,
+            .45,
+            3,
+            8
+        ),
+        mat(0x68452b)
+    );
+
+    trunk.position.y=1.5;
+
+    trunk.castShadow=true;
+
+    tree.add(trunk);
+
+
+    const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(
+            2.2,
+            12,
+            10
+        ),
+        mat(0x2f6b35)
+    );
+
+    leaves.position.y=4;
+
+    leaves.castShadow=true;
+
+    tree.add(leaves);
+
+
+    tree.position.set(
         x,
-        1.5,
+        0,
         z
     );
 
-    trunk.castShadow = true;
-
-    scene.add(trunk);
-
-
-    const leaves =
-        new THREE.Mesh(
-            new THREE.SphereGeometry(
-                2.2,
-                10,
-                10
-            ),
-            new THREE.MeshStandardMaterial({
-                color: 0x287a35
-            })
-        );
-
-    leaves.position.set(
-        x,
-        4,
-        z
-    );
-
-    leaves.castShadow = true;
-
-    scene.add(leaves);
+    scene.add(tree);
 }
 
 
-for (
-    let i = 0;
-    i < 30;
-    i++
-) {
+/* =========================================================
+   TREES
+========================================================= */
+
+for(let i=0;i<55;i++){
+
+    const side =
+        Math.random() < .5
+        ? -1
+        : 1;
 
     const x =
-        (Math.random() - .5) * 240;
+        side * (
+            12 +
+            Math.random()*45
+        );
 
     const z =
-        (Math.random() - .5) * 240;
+        -160 +
+        Math.random()*320;
 
-    if (
-        Math.abs(z) < 14
-    ) continue;
-
-    createTree(x, z);
+    createTree(x,z);
 }
 
 
-/* =====================================================
-   PLAYER - MORE REALISTIC DRIVER
-===================================================== */
+/* =========================================================
+   PLAYER
+========================================================= */
 
 const player = new THREE.Group();
-
-scene.add(player);
 
 player.position.set(
     0,
@@ -473,805 +602,157 @@ player.position.set(
     8
 );
 
-
-/* =========================
-   MATERIALS
-========================= */
-
-const skinMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0xd7a47d,
-        roughness: 0.8
-    });
-
-const hairMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x181818,
-        roughness: 0.7
-    });
-
-const shirtMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x263746,
-        roughness: 0.8
-    });
-
-const pantsMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x20242a,
-        roughness: 0.9
-    });
-
-const shoeMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x111111,
-        roughness: 0.8
-    });
+scene.add(player);
 
 
-/* =========================
-   BODY
-========================= */
+/* =========================================================
+   PLAYER MATERIALS
+========================================================= */
 
-const torso =
-    new THREE.Mesh(
-        new THREE.CapsuleGeometry(
-            0.48,
-            0.95,
-            6,
-            12
-        ),
-        shirtMaterial
-    );
+const skin = mat(0xe0aa87);
+const shirt = mat(0x26364d);
+const pants = mat(0x20252c);
+const hairMat = mat(0x151515);
+const shoeMat = mat(0x111111);
 
-torso.position.y = 1.65;
 
-torso.scale.set(
-    1.05,
-    1.15,
-    0.65
+/* =========================================================
+   TORSO
+========================================================= */
+
+const torso = new THREE.Mesh(
+    new THREE.CapsuleGeometry(
+        .48,
+        .9,
+        8,
+        16
+    ),
+    shirt
 );
 
-torso.castShadow = true;
+torso.position.y=1.65;
+
+torso.castShadow=true;
 
 player.add(torso);
 
 
-/* =========================
+/* =========================================================
    NECK
-========================= */
+========================================================= */
 
-const neck =
-    new THREE.Mesh(
-        new THREE.CylinderGeometry(
-            0.16,
-            0.18,
-            0.28,
-            12
-        ),
-        skinMaterial
-    );
+const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+        .17,
+        .19,
+        .25,
+        12
+    ),
+    skin
+);
 
-neck.position.y = 2.35;
+neck.position.y=2.35;
 
-neck.castShadow = true;
+neck.castShadow=true;
 
 player.add(neck);
 
 
-/* =========================
+/* =========================================================
    HEAD
-========================= */
+========================================================= */
 
-const head =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            0.43,
-            24,
-            24
-        ),
-        skinMaterial
-    );
-
-head.position.y = 2.75;
-
-head.scale.set(
-    0.95,
-    1.08,
-    0.9
+const head = new THREE.Mesh(
+    new THREE.SphereGeometry(
+        .43,
+        24,
+        20
+    ),
+    skin
 );
 
-head.castShadow = true;
+head.scale.set(
+    .95,
+    1.1,
+    .95
+);
+
+head.position.y=2.75;
+
+head.castShadow=true;
 
 player.add(head);
 
 
-/* =========================
+/* =========================================================
    HAIR
-========================= */
+========================================================= */
 
-const hair =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            0.45,
-            24,
-            16
-        ),
-        hairMaterial
-    );
-
-hair.position.y = 2.98;
-
-hair.scale.set(
-    1.0,
-    0.55,
-    0.95
+const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(
+        .45,
+        24,
+        16
+    ),
+    hairMat
 );
 
-hair.castShadow = true;
+hair.scale.set(
+    1,
+    .65,
+    1
+);
+
+hair.position.set(
+    0,
+    3.04,
+    -.03
+);
+
+hair.castShadow=true;
 
 player.add(hair);
 
 
-/* Side hair */
+/* =========================================================
+   HAIR SIDES
+========================================================= */
 
-const leftHair =
-    new THREE.Mesh(
+for(const side of [-1,1]){
+
+    const sideHair = new THREE.Mesh(
         new THREE.BoxGeometry(
-            0.12,
-            0.35,
-            0.35
+            .13,
+            .42,
+            .5
         ),
-        hairMaterial
+        hairMat
     );
 
-leftHair.position.set(
-    -0.39,
-    2.78,
-    0
-);
-
-player.add(leftHair);
-
-
-const rightHair =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            0.12,
-            0.35,
-            0.35
-        ),
-        hairMaterial
+    sideHair.position.set(
+        side*.39,
+        2.83,
+        -.01
     );
 
-rightHair.position.set(
-    0.39,
-    2.78,
-    0
-);
+    sideHair.castShadow=true;
 
-player.add(rightHair);
+    player.add(sideHair);
+}
 
 
-/* =========================
+/* =========================================================
    ARMS
-========================= */
+========================================================= */
 
-const armGeometry =
-    new THREE.CapsuleGeometry(
-        0.14,
-        0.75,
-        5,
-        10
-    );
+function createArm(side){
 
+    const arm = new THREE.Mesh(
+        new THREE.Capsule
+    
 
-const leftArm =
-    new THREE.Mesh(
-        armGeometry,
-        shirtMaterial
-    );
-
-leftArm.position.set(
-    -0.62,
-    1.65,
-    0
-);
-
-leftArm.rotation.z =
-    -0.08;
-
-leftArm.castShadow = true;
-
-player.add(leftArm);
-
-
-const rightArm =
-    new THREE.Mesh(
-        armGeometry,
-        shirtMaterial
-    );
-
-rightArm.position.set(
-    0.62,
-    1.65,
-    0
-);
-
-rightArm.rotation.z =
-    0.08;
-
-rightArm.castShadow = true;
-
-player.add(rightArm);
-
-
-/* =========================
-   HANDS
-========================= */
-
-const leftHand =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            0.15,
-            12,
-            12
-        ),
-        skinMaterial
-    );
-
-leftHand.position.set(
-    -0.66,
-    1.18,
-    0
-);
-
-player.add(leftHand);
-
-
-const rightHand =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            0.15,
-            12,
-            12
-        ),
-        skinMaterial
-    );
-
-rightHand.position.set(
-    0.66,
-    1.18,
-    0
-);
-
-player.add(rightHand);
-
-
-/* =========================
-   LEGS
-========================= */
-
-const legGeometry =
-    new THREE.CapsuleGeometry(
-        0.18,
-        0.85,
-        5,
-        10
-    );
-
-
-const leftLeg =
-    new THREE.Mesh(
-        legGeometry,
-        pantsMaterial
-    );
-
-leftLeg.position.set(
-    -0.25,
-    0.72,
-    0
-);
-
-leftLeg.castShadow = true;
-
-player.add(leftLeg);
-
-
-const rightLeg =
-    new THREE.Mesh(
-        legGeometry,
-        pantsMaterial
-    );
-
-rightLeg.position.set(
-    0.25,
-    0.72,
-    0
-);
-
-rightLeg.castShadow = true;
-
-player.add(rightLeg);
-
-
-/* =========================
-   SHOES
-========================= */
-
-const leftShoe =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            0.38,
-            0.18,
-            0.65
-        ),
-        shoeMaterial
-    );
-
-leftShoe.position.set(
-    -0.25,
-    0.12,
-    0.12
-);
-
-leftShoe.castShadow = true;
-
-player.add(leftShoe);
-
-
-const rightShoe =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            0.38,
-            0.18,
-            0.65
-        ),
-        shoeMaterial
-    );
-
-rightShoe.position.set(
-    0.25,
-    0.12,
-    0.12
-);
-
-rightShoe.castShadow = true;
-
-player.add(rightShoe);
-
-
-/* =========================
-   WALKING ANIMATION
-========================= */
-
-player.userData.leftLeg =
-    leftLeg;
-
-player.userData.rightLeg =
-    rightLeg;
-
-player.userData.leftArm =
-    leftArm;
-
-player.userData.rightArm =
-    rightArm;
-
-player.userData.leftShoe =
-    leftShoe;
-
-player.userData.rightShoe =
-    rightShoe;
-
-player.userData.walkTime = 0;
 
 
     
 
-
-/* =====================================================
-   TRUCK
-===================================================== */
-
-const truck =
-    new THREE.Group();
-
-
-scene.add(truck);
-
-truck.position.set(
-    0,
-    0,
-    -5
-);
-
-
-/* Truck body */
-
-const truckBody =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            3.2,
-            2,
-            6
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0xb52b2b
-        })
-    );
-
-truckBody.position.y =
-    1.5;
-
-truckBody.castShadow = true;
-
-truck.add(truckBody);
-
-
-/* Cabin */
-
-const cabin =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            3,
-            2.2,
-            2.2
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x2e536d
-        })
-    );
-
-cabin.position.set(
-    0,
-    2.2,
-    1.7
-);
-
-cabin.castShadow = true;
-
-truck.add(cabin);
-
-
-/* Wheels */
-
-function createWheel(x, z) {
-
-    const wheel =
-        new THREE.Mesh(
-            new THREE.CylinderGeometry(
-                .65,
-                .65,
-                .45,
-                16
-            ),
-            new THREE.MeshStandardMaterial({
-                color: 0x151515
-            })
-        );
-
-    wheel.rotation.z =
-        Math.PI / 2;
-
-    wheel.position.set(
-        x,
-        .65,
-        z
-    );
-
-    wheel.castShadow = true;
-
-    truck.add(wheel);
-}
-
-
-createWheel(-1.65, 1.7);
-createWheel(1.65, 1.7);
-
-createWheel(-1.65, -1.7);
-createWheel(1.65, -1.7);
-
-
-/* =====================================================
-   PLAYER CONTROLS
-===================================================== */
-
-const keys = {
-    forward: false,
-    back: false,
-    left: false,
-    right: false
-};
-
-
-function bindButton(
-    id,
-    key
-) {
-
-    const button =
-        document.getElementById(id);
-
-
-    button.addEventListener(
-        "pointerdown",
-        e => {
-
-            e.preventDefault();
-
-            keys[key] = true;
-        }
-    );
-
-
-    button.addEventListener(
-        "pointerup",
-        e => {
-
-            e.preventDefault();
-
-            keys[key] = false;
-        }
-    );
-
-
-    button.addEventListener(
-        "pointercancel",
-        () => {
-
-            keys[key] = false;
-        }
-    );
-
-
-    button.addEventListener(
-        "pointerleave",
-        () => {
-
-            keys[key] = false;
-        }
-    );
-}
-
-
-bindButton(
-    "forward",
-    "forward"
-);
-
-bindButton(
-    "back",
-    "back"
-);
-
-bindButton(
-    "left",
-    "left"
-);
-
-bindButton(
-    "right",
-    "right"
-);
-
-
-/* Keyboard */
-
-window.addEventListener(
-    "keydown",
-    e => {
-
-        if(e.key === "w")
-            keys.forward = true;
-
-        if(e.key === "s")
-            keys.back = true;
-
-        if(e.key === "a")
-            keys.left = true;
-
-        if(e.key === "d")
-            keys.right = true;
-    }
-);
-
-
-window.addEventListener(
-    "keyup",
-    e => {
-
-        if(e.key === "w")
-            keys.forward = false;
-
-        if(e.key === "s")
-            keys.back = false;
-
-        if(e.key === "a")
-            keys.left = false;
-
-        if(e.key === "d")
-            keys.right = false;
-    }
-);
-
-
-/* =====================================================
-   MOVEMENT
-===================================================== */
-
-let walkAnimation = 0;
-
-
-function updatePlayer() {
-
-    const speed = .10;
-
-    if(keys.left) {
-
-        player.rotation.y += .045;
-
-    }
-
-
-    if(moving) {
-
-    walkAnimation += .25;
-
-    const swing =
-        Math.sin(walkAnimation) * 0.65;
-
-    player.userData.leftLeg.rotation.x =
-        swing;
-
-    player.userData.rightLeg.rotation.x =
-        -swing;
-
-    player.userData.leftArm.rotation.x =
-        -swing * 0.55;
-
-    player.userData.rightArm.rotation.x =
-        swing * 0.55;
-
-}
-else {
-
-    player.userData.leftLeg.rotation.x = 0;
-
-    player.userData.rightLeg.rotation.x = 0;
-
-    player.userData.leftArm.rotation.x = 0;
-
-    player.userData.rightArm.rotation.x = 0;
-
-      }
-
-        
-
-
-    document.getElementById(
-        "speed"
-    ).textContent =
-        moving ? "5" : "0";
-}
-
-
-/* =====================================================
-   THIRD PERSON CAMERA
-===================================================== */
-
-function updateCamera() {
-
-    const cameraDistance = 8;
-
-    const cameraHeight = 4.5;
-
-
-    const offset =
-        new THREE.Vector3(
-            0,
-            cameraHeight,
-            -cameraDistance
-        );
-
-
-    offset.applyQuaternion(
-        player.quaternion
-    );
-
-
-    const target =
-        player.position.clone();
-
-
-    target.y += 1.6;
-
-
-    const desired =
-        target.clone().add(offset);
-
-
-    camera.position.lerp(
-        desired,
-        .12
-    );
-
-
-    camera.lookAt(
-        target
-    );
-}
-
-
-/* =====================================================
-   ANIMATION LOOP
-===================================================== */
-
-function animate() {
-
-    requestAnimationFrame(
-        animate
-    );
-
-
-    updatePlayer();
-
-    updateCamera();
-
-
-    renderer.render(
-        scene,
-        camera
-    );
-}
-
-
-animate();
-
-
-/* =====================================================
-   RESIZE
-===================================================== */
-
-window.addEventListener(
-    "resize",
-    () => {
-
-        camera.aspect =
-            window.innerWidth /
-            window.innerHeight;
-
-        camera.updateProjectionMatrix();
-
-
-        renderer.setSize(
-            window.innerWidth,
-            window.innerHeight
-        );
-
-    }
-);
-
-</script>
-
-</body>
-    </html>
-
-
-
-
-
-
-
     
-        
-
-    
-    
-  
-  
-
-  
-
-        
-            
-
