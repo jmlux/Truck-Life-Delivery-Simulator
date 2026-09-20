@@ -1113,57 +1113,39 @@ function updatePlayer() {
     }
 
 
-    if(keys.right) {
-
-        player.rotation.y -= .045;
-
-    }
-
-
-    let moving = false;
-
-
-    if(keys.forward) {
-
-        player.translateZ(
-            speed
-        );
-
-        moving = true;
-
-    }
-
-
-    if(keys.back) {
-
-        player.translateZ(
-            -speed
-        );
-
-        moving = true;
-
-    }
-
-
     if(moving) {
 
-        walkAnimation += .25;
+    walkAnimation += .25;
 
-        leftLeg.rotation.x =
-            Math.sin(walkAnimation) * .6;
+    const swing =
+        Math.sin(walkAnimation) * 0.65;
 
-        rightLeg.rotation.x =
-            Math.sin(
-                walkAnimation + Math.PI
-            ) * .6;
+    player.userData.leftLeg.rotation.x =
+        swing;
 
-    }
-    else {
+    player.userData.rightLeg.rotation.x =
+        -swing;
 
-        leftLeg.rotation.x = 0;
-        rightLeg.rotation.x = 0;
+    player.userData.leftArm.rotation.x =
+        -swing * 0.55;
 
-    }
+    player.userData.rightArm.rotation.x =
+        swing * 0.55;
+
+}
+else {
+
+    player.userData.leftLeg.rotation.x = 0;
+
+    player.userData.rightLeg.rotation.x = 0;
+
+    player.userData.leftArm.rotation.x = 0;
+
+    player.userData.rightArm.rotation.x = 0;
+
+      }
+
+        
 
 
     document.getElementById(
