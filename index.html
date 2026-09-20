@@ -460,12 +460,10 @@ for (
 
 
 /* =====================================================
-   PLAYER
+   PLAYER - MORE REALISTIC DRIVER
 ===================================================== */
 
-const player =
-    new THREE.Group();
-
+const player = new THREE.Group();
 
 scene.add(player);
 
@@ -476,93 +474,302 @@ player.position.set(
 );
 
 
-/* Body */
+/* =========================
+   MATERIALS
+========================= */
 
-const body =
+const skinMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0xd7a47d,
+        roughness: 0.8
+    });
+
+const hairMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x181818,
+        roughness: 0.7
+    });
+
+const shirtMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x263746,
+        roughness: 0.8
+    });
+
+const pantsMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x20242a,
+        roughness: 0.9
+    });
+
+const shoeMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        roughness: 0.8
+    });
+
+
+/* =========================
+   BODY
+========================= */
+
+const torso =
     new THREE.Mesh(
-        new THREE.BoxGeometry(
-            1.1,
-            1.6,
-            .65
+        new THREE.CapsuleGeometry(
+            0.48,
+            0.95,
+            6,
+            12
         ),
-        new THREE.MeshStandardMaterial({
-            color: 0x263746
-        })
+        shirtMaterial
     );
 
-body.position.y =
-    1.5;
+torso.position.y = 1.65;
 
-body.castShadow = true;
+torso.scale.set(
+    1.05,
+    1.15,
+    0.65
+);
 
-player.add(body);
+torso.castShadow = true;
+
+player.add(torso);
 
 
-/* Head */
+/* =========================
+   NECK
+========================= */
+
+const neck =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            0.16,
+            0.18,
+            0.28,
+            12
+        ),
+        skinMaterial
+    );
+
+neck.position.y = 2.35;
+
+neck.castShadow = true;
+
+player.add(neck);
+
+
+/* =========================
+   HEAD
+========================= */
 
 const head =
     new THREE.Mesh(
         new THREE.SphereGeometry(
-            .42,
-            16,
-            16
+            0.43,
+            24,
+            24
         ),
-        new THREE.MeshStandardMaterial({
-            color: 0xd7a47d
-        })
+        skinMaterial
     );
 
-head.position.y =
-    2.65;
+head.position.y = 2.75;
+
+head.scale.set(
+    0.95,
+    1.08,
+    0.9
+);
 
 head.castShadow = true;
 
 player.add(head);
 
 
-/* Hair */
+/* =========================
+   HAIR
+========================= */
 
 const hair =
     new THREE.Mesh(
         new THREE.SphereGeometry(
-            .43,
-            16,
+            0.45,
+            24,
             16
         ),
-        new THREE.MeshStandardMaterial({
-            color: 0x202020
-        })
+        hairMaterial
     );
 
-hair.scale.y = .55;
+hair.position.y = 2.98;
 
-hair.position.y =
-    2.9;
+hair.scale.set(
+    1.0,
+    0.55,
+    0.95
+);
+
+hair.castShadow = true;
 
 player.add(hair);
 
 
-/* Legs */
+/* Side hair */
 
-const legMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x202020
-    });
+const leftHair =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            0.12,
+            0.35,
+            0.35
+        ),
+        hairMaterial
+    );
+
+leftHair.position.set(
+    -0.39,
+    2.78,
+    0
+);
+
+player.add(leftHair);
+
+
+const rightHair =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            0.12,
+            0.35,
+            0.35
+        ),
+        hairMaterial
+    );
+
+rightHair.position.set(
+    0.39,
+    2.78,
+    0
+);
+
+player.add(rightHair);
+
+
+/* =========================
+   ARMS
+========================= */
+
+const armGeometry =
+    new THREE.CapsuleGeometry(
+        0.14,
+        0.75,
+        5,
+        10
+    );
+
+
+const leftArm =
+    new THREE.Mesh(
+        armGeometry,
+        shirtMaterial
+    );
+
+leftArm.position.set(
+    -0.62,
+    1.65,
+    0
+);
+
+leftArm.rotation.z =
+    -0.08;
+
+leftArm.castShadow = true;
+
+player.add(leftArm);
+
+
+const rightArm =
+    new THREE.Mesh(
+        armGeometry,
+        shirtMaterial
+    );
+
+rightArm.position.set(
+    0.62,
+    1.65,
+    0
+);
+
+rightArm.rotation.z =
+    0.08;
+
+rightArm.castShadow = true;
+
+player.add(rightArm);
+
+
+/* =========================
+   HANDS
+========================= */
+
+const leftHand =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            0.15,
+            12,
+            12
+        ),
+        skinMaterial
+    );
+
+leftHand.position.set(
+    -0.66,
+    1.18,
+    0
+);
+
+player.add(leftHand);
+
+
+const rightHand =
+    new THREE.Mesh(
+        new THREE.SphereGeometry(
+            0.15,
+            12,
+            12
+        ),
+        skinMaterial
+    );
+
+rightHand.position.set(
+    0.66,
+    1.18,
+    0
+);
+
+player.add(rightHand);
+
+
+/* =========================
+   LEGS
+========================= */
+
+const legGeometry =
+    new THREE.CapsuleGeometry(
+        0.18,
+        0.85,
+        5,
+        10
+    );
 
 
 const leftLeg =
     new THREE.Mesh(
-        new THREE.BoxGeometry(
-            .3,
-            1.1,
-            .35
-        ),
-        legMaterial
+        legGeometry,
+        pantsMaterial
     );
 
 leftLeg.position.set(
-    -.25,
-    .55,
+    -0.25,
+    0.72,
     0
 );
 
@@ -573,23 +780,93 @@ player.add(leftLeg);
 
 const rightLeg =
     new THREE.Mesh(
-        new THREE.BoxGeometry(
-            .3,
-            1.1,
-            .35
-        ),
-        legMaterial
+        legGeometry,
+        pantsMaterial
     );
 
 rightLeg.position.set(
-    .25,
-    .55,
+    0.25,
+    0.72,
     0
 );
 
 rightLeg.castShadow = true;
 
 player.add(rightLeg);
+
+
+/* =========================
+   SHOES
+========================= */
+
+const leftShoe =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            0.38,
+            0.18,
+            0.65
+        ),
+        shoeMaterial
+    );
+
+leftShoe.position.set(
+    -0.25,
+    0.12,
+    0.12
+);
+
+leftShoe.castShadow = true;
+
+player.add(leftShoe);
+
+
+const rightShoe =
+    new THREE.Mesh(
+        new THREE.BoxGeometry(
+            0.38,
+            0.18,
+            0.65
+        ),
+        shoeMaterial
+    );
+
+rightShoe.position.set(
+    0.25,
+    0.12,
+    0.12
+);
+
+rightShoe.castShadow = true;
+
+player.add(rightShoe);
+
+
+/* =========================
+   WALKING ANIMATION
+========================= */
+
+player.userData.leftLeg =
+    leftLeg;
+
+player.userData.rightLeg =
+    rightLeg;
+
+player.userData.leftArm =
+    leftArm;
+
+player.userData.rightArm =
+    rightArm;
+
+player.userData.leftShoe =
+    leftShoe;
+
+player.userData.rightShoe =
+    rightShoe;
+
+player.userData.walkTime = 0;
+
+
+    
 
 
 /* =====================================================
